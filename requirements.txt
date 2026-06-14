@@ -3,3 +3,4 @@ pandas
 yfinance
 smartapi-python
 pyotp
+logzero
