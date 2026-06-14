@@ -4,6 +4,7 @@ import yfinance as yf
 import time
 from SmartApi import SmartConnect
 import pyotp
+import streamlit.components.v1 as components  # YAHAN IMPORT ADD KIYA HAI
 
 # --- Page Setup ---
 st.set_page_config(page_title="Multibagger Stock Scanner", layout="wide")
@@ -35,7 +36,9 @@ clock_html = """
     updateClock();
 </script>
 """
-st.sidebar.components.html(clock_html, height=90)
+# YAHAN SYNTAX THEEK KIYA HAI
+with st.sidebar:
+    components.html(clock_html, height=90)
 
 st.sidebar.markdown("### 📝 Trading Notepad")
 st.sidebar.text_area("Notes:", height=200, placeholder="Kuch bhi type karein...")
