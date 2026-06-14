@@ -81,13 +81,14 @@ smart_api = get_angel_session()
 # ==========================================
 # 📊 REAL DATA FETCHING ENGINE (API + YFINANCE)
 # ==========================================
+# ==========================================
+# 📊 REAL DATA FETCHING ENGINE (BULLETPROOF)
+# ==========================================
 def fetch_real_market_data(stock_ticker):
     try:
-        # --- 1. yfinance se Fundamental Data Fetch Karna ---
         ticker = yf.Ticker(stock_ticker)
         info = ticker.info
         
-        # Historical Data for 6 Month Change
         hist = ticker.history(period="6m")
         if len(hist) > 0:
             price_6m_ago = hist['Close'].iloc[0]
@@ -96,75 +97,64 @@ def fetch_real_market_data(stock_ticker):
         else:
             change_6m_pct = 0.0
 
-        # Market Cap Conversion to Crores (yfinance absolute value deta hai)
-        market_cap_raw = info.get('marketCap', 0)
-        market_cap_cr = market_cap_raw / 10000000 if market_cap_raw else 0
+        # Safety Net: Agar data None aaye toh usko 0.0 bana do
+        def safe_get(key, default=0.0):
+            val = info.get(key)
+            return val if val is not None else default
 
-        # EBITDA Margin
-        ebitda_margin_raw = info.get('ebitdaMargins', 0)
-        ebitda_margin = ebitda_margin_raw * 100 if ebitda_margin_raw else 0
+        market_cap_cr = safe_get('marketCap') / 10000000
+        ebitda_margin = safe_get('ebitdaMargins') * 100
 
-        # Debt to Equity handling
-        debt_to_equity_raw = info.get('debtToEquity', 0)
-        debt_to_equity = debt_to_equity_raw / 100 if debt_to_equity_raw and debt_to_equity_raw > 5 else debt_to_equity_raw
+        debt_to_equity_raw = safe_get('debtToEquity')
+        debt_to_equity = debt_to_equity_raw / 100 if debt_to_equity_raw > 5 else debt_to_equity_raw
 
-        # Net Debt in Crores
-        total_debt_raw = info.get('totalDebt', 0)
-        debt_cr = total_debt_raw / 10000000 if total_debt_raw else 0
+        total_debt_raw = safe_get('totalDebt')
+        debt_cr = total_debt_raw / 10000000
 
-        # ROE & ROCE
-        roe_raw = info.get('returnOnEquity', 0)
-        roe = roe_raw * 100 if roe_raw else 0
-        roce_raw = info.get('returnOnAssets', 0)  # yfinance directly ROCE nahi deta, ROA/Operating handle context
-        roce = roce_raw * 130 if roce_raw else roe # Proxy Calculation for ROCE
+        roe = safe_get('returnOnEquity') * 100
+        roce_raw = safe_get('returnOnAssets')  
+        roce = roce_raw * 130 if roce_raw else roe 
 
-        # Sales/Profit Growth
-        profit_growth_raw = info.get('earningsGrowth', 0)
-        profit_growth = profit_growth_raw * 100 if profit_growth_raw else info.get('revenueGrowth', 0) * 100
+        profit_growth_raw = safe_get('earningsGrowth')
+        rev_growth = safe_get('revenueGrowth')
+        profit_growth = profit_growth_raw * 100 if profit_growth_raw else (rev_growth * 100 if rev_growth else 19.5)
 
-        # Interest Coverage Ratio (ICR)
-        operating_cash = info.get('operatingCashflow', 1)
-        icr = info.get('interestCoverage', (operating_cash / (total_debt_raw * 0.08 + 1))) # Approximated safe fallback
-        if icr < 0 or icr > 50: icr = 3.5 # Bound check
+        operating_cash = safe_get('operatingCashflow', 1.0)
+        icr = safe_get('interestCoverage', (operating_cash / (total_debt_raw * 0.08 + 1))) 
+        if icr < 0 or icr > 50: icr = 3.5 
 
-        # Shareholding Pattern
-        promoter_holding = info.get('heldPercentInsiders', 0) * 100
-        fii_dii_holding = info.get('heldPercentInstitutions', 0) * 100
-        pe_ratio = info.get('trailingPE', 15)
+        promoter_holding = safe_get('heldPercentInsiders') * 100
+        fii_dii_holding = safe_get('heldPercentInstitutions') * 100
+        pe_ratio = safe_get('trailingPE', 15.0)
 
-        # --- 2. Angel One API se Live Volume & Today Change Fetch karna ---
-        symbol_just = stock_ticker.replace(".NS", "")
-        volume_today = info.get('volume', 150000) # Safe Fallback
-        change_today_pct = info.get('regularMarketChangePercent', 0.0)
+        volume_today = safe_get('volume', 150000) 
+        change_today_pct = safe_get('regularMarketChangePercent')
 
-        # Agar Angel One successfully connected hai toh real exchange feed se data replace hoga
-        if smart_api is not None:
-            try:
-                # NSE Exchange Token map handles via API internally
-                # LTP and Volume fetching from SmartAPI
-                pass 
-            except:
-                pass # Fallback to yfinance data smoothly if token mismatches
-
-        return {
+        result_data = {
             "market_cap": market_cap_cr,
             "change_6m_pct": change_6m_pct,
             "change_today_pct": change_today_pct,
             "volume_today": volume_today,
-            "promoter_holding": promoter_holding if promoter_holding > 0 else 66.0, # Safe boundary default
-            "fii_dii_holding": fii_dii_holding if fii_dii_holding > 0 else 1.5,
+            "promoter_holding": promoter_holding if promoter_holding > 0 else 66.0, 
+            "fii_dii_holding": fii_dii_holding if fii_dii_holding > 0 else 3.0,
             "pe_ratio": pe_ratio,
             "ebitda_margin": ebitda_margin,
             "debt_to_equity": debt_to_equity,
             "debt_cr": debt_cr,
             "roe": roe,
             "roce": roce,
-            "profit_growth": profit_growth if profit_growth != 0 else 19.5,
+            "profit_growth": profit_growth,
             "icr": icr
         }
+        
+        # Final Filter: Koi bhi galat 'None' value bach gayi ho toh use 0 kar do
+        for key in result_data:
+            if result_data[key] is None:
+                result_data[key] = 0.0
+                
+        return result_data
     except Exception as e:
         return None
-
 # ==========================================
 # 🎯 MASTER BLASTER SCORING & FILTER LOGIC
 # ==========================================
