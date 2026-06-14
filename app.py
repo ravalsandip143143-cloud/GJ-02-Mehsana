@@ -144,7 +144,7 @@ def fetch_real_market_data(stock_ticker):
             "change_today_pct": change_today_pct,
             "volume_today": volume_today,
             "promoter_holding": promoter_holding if promoter_holding > 0 else 66.0, # Safe boundary default
-            "fii_dii_holding": fii_dii_holding if fii_dii_holding > 0 else 3.0,
+            "fii_dii_holding": fii_dii_holding if fii_dii_holding > 0 else 1.5,
             "pe_ratio": pe_ratio,
             "ebitda_margin": ebitda_margin,
             "debt_to_equity": debt_to_equity,
@@ -209,6 +209,33 @@ def generate_table_rows(sr_no, stock_name, data, score):
 # --- UI Execution ---
 st.title("🎯 Master Blaster Multibagger Scanner")
 st.write(f"Scanning from: **{WATCHLIST_NAME}**")
+# ==========================================
+# 📈 LIVE MARKET INDICES (Nifty, BankNifty, IT, VIX)
+# ==========================================
+st.markdown("### 📈 Live Market Indices")
+idx_cols = st.columns(4)
+
+def get_index_data(ticker):
+    try:
+        t = yf.Ticker(ticker)
+        # Fetching fast live data
+        current = t.fast_info.last_price
+        prev_close = t.fast_info.previous_close
+        change = current - prev_close
+        pct_change = (change / prev_close) * 100
+        return current, change, pct_change
+    except:
+        return 0.0, 0.0, 0.0
+
+# Tickers for Indices
+indices = {"Nifty 50": "^NSEI", "BankNifty": "^NSEBANK", "Nifty IT": "^CNXIT", "India VIX": "^INDIAVIX"}
+
+# Displaying metrics side by side
+for col, (name, symbol) in zip(idx_cols, indices.items()):
+    curr, chg, pct = get_index_data(symbol)
+    col.metric(label=name, value=f"{curr:.2f}", delta=f"{chg:.2f} ({pct:.2f}%)")
+
+st.markdown("---")
 
 col_a, col_b = st.columns([8, 2])
 
