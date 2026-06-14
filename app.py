@@ -15,8 +15,16 @@ def apply_light_color(val):
 
 # --- Your Logic Parameters ---
 WATCHLIST_NAME = "kishanshiv whatchlist"
-# Real Market ke liye NSE ke tickers ko properly '.NS' ke sath likhna hota hai
-WATCHLIST_STOCKS = ["RAILTEL.NS", "RVNL.NS", "SUZLON.NS", "TRIDENT.NS", "IRFC.NS", "ZOMATO.NS"]
+# ==========================================
+# 📂 WATCHLIST FILE READER
+# ==========================================
+try:
+    with open("kishanshivwatchlist.txt", "r") as f:
+        # File se saare stocks read karna (Aapne .NS pehle hi laga diya hai)
+        WATCHLIST_STOCKS = [line.strip() for line in f.readlines() if line.strip()]
+except FileNotFoundError:
+    WATCHLIST_STOCKS = []
+    st.error("⚠️ kishanshivwatchlist.txt file nahi mili!")
 
 # ==========================================
 # 🕒 SIDEBAR: CLOCK & NOTEPAD
@@ -240,23 +248,35 @@ st.markdown("---")
 col_a, col_b = st.columns([8, 2])
 
 if col_a.button("🚀 GJ-02 SCAN"):
-    with st.spinner('Fetching LIVE Data from Exchanges & Analyzing Financials...'):
+    if not WATCHLIST_STOCKS:
+        st.error("Watchlist khali hai ya file read nahi hui.")
+    else:
+        st.info(f"Total {len(WATCHLIST_STOCKS)} stocks scan ho rahe hain. Isme 5-10 minute lag sakte hain, kripya wait karein...")
+        
+        # Progress Bar aur Status text
+        progress_bar = st.progress(0)
+        status_text = st.empty()
         
         final_data_rows = []
         sr_count = 1
+        total_stocks = len(WATCHLIST_STOCKS)
         
-        for stock in WATCHLIST_STOCKS:
+        for index, stock in enumerate(WATCHLIST_STOCKS):
+            # Live Progress update karna
+            progress_bar.progress((index + 1) / total_stocks)
+            status_text.text(f"Scanning {stock} ({index+1}/{total_stocks})...")
+            
             api_data = fetch_real_market_data(stock)
             
             if api_data is not None:
-                # Strict Market Cap Check (500 to 5000 Cr)
                 if 500 <= api_data['market_cap'] <= 5000:
-                    # Strict P1 to P5 Rules Check
                     if check_p1_to_p5(api_data):
                         score = calculate_score(api_data)
                         rows = generate_table_rows(sr_count, stock, api_data, score)
                         final_data_rows.extend(rows)
                         sr_count += 1
+                        
+        status_text.text("Scan Completed!")
         
         if len(final_data_rows) > 0:
             st.success(f"💥 Scan Complete! {sr_count-1} Multibagger Stock(s) found matching exact criteria.")
@@ -268,10 +288,8 @@ if col_a.button("🚀 GJ-02 SCAN"):
             col_b.download_button(
                 label="📥 Download Excel",
                 data=csv,
-                file_name="Master_Blaster_Live_Report.csv",
+                file_name="GJ02_Master_Blaster_Report.csv",
                 mime="text/csv",
             )
         else:
             st.warning("⚠️ Koi stock aapke master STRATEGY criteria ko aaj pass nahi kar paya. Market check karte rahein!")
-else:
-    st.info("👆  મલ્ટીબેગર સ્ટોક જોવા ઉપ્પર નુ બટન દબાવો 👇 સ્ટોક નીચે ટેબલ માં દેખાશે ભાઈ 😎.")
