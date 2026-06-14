@@ -207,7 +207,7 @@ def generate_table_rows(sr_no, stock_name, data, score):
     return rows
 
 # --- UI Execution ---
-st.title("🎯 Master Blaster Multibagger Scanner")
+st.title("🎯 GJ-02 Stock Scanner")
 st.write(f"Scanning from: **{WATCHLIST_NAME}**")
 # ==========================================
 # 📈 LIVE MARKET INDICES (Nifty, BankNifty, IT, VIX)
@@ -272,6 +272,6 @@ if col_a.button("🚀 GJ-02 SCAN"):
                 mime="text/csv",
             )
         else:
-            st.warning("⚠️ Koi stock aapke strict P1-P5 master criteria ko aaj pass nahi kar paya. Market check karte rahein!")
+            st.warning("⚠️ Koi stock aapke master STRATEGY criteria ko aaj pass nahi kar paya. Market check karte rahein!")
 else:
     st.info("👆  મલ્ટીબેગર સ્ટોક જોવા ઉપ્પર નુ બટન દબાવો 👇 સ્ટોક નીચે ટેબલ માં દેખાશે ભાઈ 😎.")
