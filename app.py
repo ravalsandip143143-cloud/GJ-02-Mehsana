@@ -4,7 +4,7 @@ import random # Sirf dummy calculation ke liye, baad me real API endpoint lagaye
 import time
 
 # --- Page Setup ---
-st.set_page_config(page_title="GJ-02,Mehsana", layout="wide")
+st.set_page_config(page_title="Multibagger Stock Scanner", layout="wide")
 
 # --- Styling (20-30% Light Color) ---
 def apply_light_color(val):
@@ -17,12 +17,33 @@ WATCHLIST_NAME = "kishanshiv whatchlist"
 WATCHLIST_STOCKS = ["RAILTEL", "RVNL", "SUZLON", "TRIDENT", "IRFC", "ZOMATO"]
 
 # ==========================================
-# 🔑 NAYA ADD KIYA HUA: API KEY LOGIC (Sidebar)
+# 🔒 100% SAFE API KEY LOGIC USING STREAMLIT SECRETS
 # ==========================================
-st.sidebar.header("🔑 API Settings")
+st.sidebar.header("🔒 API Settings (Secured)")
 api_broker = st.sidebar.selectbox("Choose Broker API", ["Angel One", "Kotak Neo"])
-api_key = st.sidebar.text_input("Enter Trade API Key", type="password")
-client_id = st.sidebar.text_input("Enter Client ID")
+
+# API Key ko safe jagah (secrets.toml) se fetch karna
+try:
+    if api_broker == "Angel One":
+        api_key = st.secrets["angel_one"]["api_key"]
+        client_id = st.secrets["angel_one"]["client_id"]
+    else:
+        # Agar Kotak chahiye to baad me secrets.toml me [kotak_neo] add karke yahan laa sakte hain
+        api_key = ""
+        client_id = ""
+        
+    if api_key and client_id:
+        st.sidebar.success(f"✅ {api_broker} Key Securely Loaded!")
+    else:
+        st.sidebar.warning(f"⚠️ {api_broker} keys missing in secrets.toml")
+except FileNotFoundError:
+    st.sidebar.error("⚠️ .streamlit/secrets.toml file nahi mili!")
+    api_key = ""
+    client_id = ""
+except KeyError:
+    st.sidebar.error(f"⚠️ {api_broker} ki details secrets.toml me nahi hain!")
+    api_key = ""
+    client_id = ""
 
 st.sidebar.markdown("---")
 st.sidebar.info("API connect hone ke baad data direct exchange se aayega.")
@@ -121,9 +142,9 @@ col_a, col_b = st.columns([8, 2])
 if col_a.button("🚀 Start P1-P5 Master Scan"):
     # Chota sa check taaki bina API key ke aage na badhe
     if not api_key or not client_id:
-        st.error("⚠️ Pehle sidebar me apni API Key aur Client ID enter karein!")
+        st.error("⚠️ Background me API Key fetch nahi ho payi. Kripya .streamlit/secrets.toml check karein!")
     else:
-        with st.spinner(f'Connecting to {api_broker} API & Scanning Market Data...'):
+        with st.spinner(f'Connecting to {api_broker} API securely & Scanning Market Data...'):
             time.sleep(2) # Fake API loading time
             
             final_data_rows = []
@@ -131,7 +152,6 @@ if col_a.button("🚀 Start P1-P5 Master Scan"):
             
             # Scanning each stock in watchlist
             for stock in WATCHLIST_STOCKS:
-                # Ab api_key aur client_id function ke andar ja rahe hain
                 api_data = fetch_api_data(stock, api_broker, api_key, client_id)
                 
                 # Market Cap Check (500 to 5000 Cr)
@@ -164,4 +184,4 @@ if col_a.button("🚀 Start P1-P5 Master Scan"):
             else:
                 st.warning("Koi stock aapke strict P1-P5 master criteria ko aaj pass nahi kar paya. Market check karte rahein!")
 else:
-    st.info("👈 Scan start karne ke liye sidebar me API details dalein aur 'Start P1-P5 Master Scan' par click karein.")
+    st.info("👈 Scan start karne ke liye 'Start P1-P5 Master Scan' par click karein. Aapki API key background me already secure hai.")
