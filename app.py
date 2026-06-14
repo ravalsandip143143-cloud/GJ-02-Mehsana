@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
-import random # Sirf dummy calculation ke liye, baad me API lagayenge
+import random # Sirf dummy calculation ke liye, baad me real API endpoint lagayenge
 import time
 
 # --- Page Setup ---
-st.set_page_config(page_title="GJ-02, Mahesana", layout="wide")
+st.set_page_config(page_title="Multibagger Stock Scanner", layout="wide")
 
 # --- Styling (20-30% Light Color) ---
 def apply_light_color(val):
@@ -16,9 +16,21 @@ WATCHLIST_NAME = "kishanshiv whatchlist"
 # Dummy watchlist of small-caps
 WATCHLIST_STOCKS = ["RAILTEL", "RVNL", "SUZLON", "TRIDENT", "IRFC", "ZOMATO"]
 
-def fetch_api_data(stock_name):
-    # YAHAN AAPKA API CONNECT HOGA (Angel One / Kotak Neo)
-    # Abhi ke liye hum aapke P1 to P5 logic ko test karne ke liye data mock kar rahe hain
+# ==========================================
+# 🔑 NAYA ADD KIYA HUA: API KEY LOGIC (Sidebar)
+# ==========================================
+st.sidebar.header("🔑 API Settings")
+api_broker = st.sidebar.selectbox("Choose Broker API", ["Angel One", "Kotak Neo"])
+api_key = st.sidebar.text_input("Enter Trade API Key", type="password")
+client_id = st.sidebar.text_input("Enter Client ID")
+
+st.sidebar.markdown("---")
+st.sidebar.info("API connect hone ke baad data direct exchange se aayega.")
+# ==========================================
+
+def fetch_api_data(stock_name, broker, key, client):
+    # YAHAN AAPKA API CONNECT HOGA USING THE VARIABLES (broker, key, client)
+    # Jab aap exact API ka documentation lagayenge toh ye random data hat jayega
     
     # Randomly generating data that MIGHT pass your strict logic
     return {
@@ -107,44 +119,49 @@ st.write(f"Scanning from: **{WATCHLIST_NAME}**")
 col_a, col_b = st.columns([8, 2])
 
 if col_a.button("🚀 Start P1-P5 Master Scan"):
-    with st.spinner('Connecting to API & Scanning Market Data...'):
-        time.sleep(2) # Fake API loading time
-        
-        final_data_rows = []
-        sr_count = 1
-        
-        # Scanning each stock in watchlist
-        for stock in WATCHLIST_STOCKS:
-            api_data = fetch_api_data(stock)
+    # Chota sa check taaki bina API key ke aage na badhe
+    if not api_key or not client_id:
+        st.error("⚠️ Pehle sidebar me apni API Key aur Client ID enter karein!")
+    else:
+        with st.spinner(f'Connecting to {api_broker} API & Scanning Market Data...'):
+            time.sleep(2) # Fake API loading time
             
-            # Market Cap Check (500 to 5000 Cr)
-            if 500 <= api_data['market_cap'] <= 5000:
-                # P1 to P5 strict check
-                if check_p1_to_p5(api_data):
-                    score = calculate_score(api_data)
-                    rows = generate_table_rows(sr_count, stock, api_data, score)
-                    final_data_rows.extend(rows)
-                    sr_count += 1
-        
-        if len(final_data_rows) > 0:
-            st.success(f"Scan Complete! {sr_count-1} Multibagger(s) found matching exact criteria.")
-            df_results = pd.DataFrame(final_data_rows)
+            final_data_rows = []
+            sr_count = 1
             
-            # Applying 20-30% light color styling
-            styled_df = df_results.style.map(apply_light_color)
+            # Scanning each stock in watchlist
+            for stock in WATCHLIST_STOCKS:
+                # Ab api_key aur client_id function ke andar ja rahe hain
+                api_data = fetch_api_data(stock, api_broker, api_key, client_id)
+                
+                # Market Cap Check (500 to 5000 Cr)
+                if 500 <= api_data['market_cap'] <= 5000:
+                    # P1 to P5 strict check
+                    if check_p1_to_p5(api_data):
+                        score = calculate_score(api_data)
+                        rows = generate_table_rows(sr_count, stock, api_data, score)
+                        final_data_rows.extend(rows)
+                        sr_count += 1
             
-            # Displaying Table
-            st.dataframe(styled_df, use_container_width=True, height=600, hide_index=True)
-            
-            # Download Button (Top Right Corner via column layout)
-            csv = df_results.to_csv(index=False).encode('utf-8')
-            col_b.download_button(
-                label="📥 Download Excel/CSV",
-                data=csv,
-                file_name="Master_Blaster_Report.csv",
-                mime="text/csv",
-            )
-        else:
-            st.warning("Koi stock aapke strict P1-P5 master criteria ko aaj pass nahi kar paya. Market check karte rahein!")
+            if len(final_data_rows) > 0:
+                st.success(f"Scan Complete! {sr_count-1} Multibagger(s) found matching exact criteria.")
+                df_results = pd.DataFrame(final_data_rows)
+                
+                # Applying 20-30% light color styling
+                styled_df = df_results.style.map(apply_light_color)
+                
+                # Displaying Table
+                st.dataframe(styled_df, use_container_width=True, height=600, hide_index=True)
+                
+                # Download Button (Top Right Corner via column layout)
+                csv = df_results.to_csv(index=False).encode('utf-8')
+                col_b.download_button(
+                    label="📥 Download Excel/CSV",
+                    data=csv,
+                    file_name="Master_Blaster_Report.csv",
+                    mime="text/csv",
+                )
+            else:
+                st.warning("Koi stock aapke strict P1-P5 master criteria ko aaj pass nahi kar paya. Market check karte rahein!")
 else:
-    st.info("👈 Scan start karne ke liye 'Start P1-P5 Master Scan' par click karein.")
+    st.info("👈 Scan start karne ke liye sidebar me API details dalein aur 'Start P1-P5 Master Scan' par click karein.")
