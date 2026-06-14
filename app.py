@@ -7,7 +7,7 @@ import pyotp
 import streamlit.components.v1 as components  # YAHAN IMPORT ADD KIYA HAI
 
 # --- Page Setup ---
-st.set_page_config(page_title="Multibagger Stock Scanner", layout="wide")
+st.set_page_config(page_title="GJ-02 Stock Scanner", layout="wide")
 
 # --- Styling (20-30% Light Color) ---
 def apply_light_color(val):
@@ -239,7 +239,7 @@ st.markdown("---")
 
 col_a, col_b = st.columns([8, 2])
 
-if col_a.button("🚀 Start P1-P5 Master Scan"):
+if col_a.button("🚀 GJ-02 SCAN"):
     with st.spinner('Fetching LIVE Data from Exchanges & Analyzing Financials...'):
         
         final_data_rows = []
@@ -274,4 +274,4 @@ if col_a.button("🚀 Start P1-P5 Master Scan"):
         else:
             st.warning("⚠️ Koi stock aapke strict P1-P5 master criteria ko aaj pass nahi kar paya. Market check karte rahein!")
 else:
-    st.info("👈 Live scanning shuru karne ke liye 'Start P1-P5 Master Scan' par click karein.")
+    st.info("👆  મલ્ટીબેગર સ્ટોક જોવા ઉપ્પર નુ બટન દબાવો 👇 સ્ટોક નીચે ટેબલ માં દેખાશે ભાઈ 😎.")
