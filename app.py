@@ -4,7 +4,7 @@ import random # Sirf dummy calculation ke liye, baad me real API endpoint lagaye
 import time
 
 # --- Page Setup ---
-st.set_page_config(page_title="Multibagger Stock Scanner", layout="wide")
+st.set_page_config(page_title="GJ-02,Mehsana", layout="wide")
 
 # --- Styling (20-30% Light Color) ---
 def apply_light_color(val):
