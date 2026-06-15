@@ -22,7 +22,6 @@ try:
         for line in f.readlines():
             s = line.strip()
             if s:
-                # Agar aapne galti se .NS nahi lagaya, toh ye khud laga lega
                 if not s.endswith(".NS"):
                     s += ".NS"
                 WATCHLIST_STOCKS.append(s)
@@ -109,7 +108,6 @@ def fetch_real_market_data(stock_ticker):
         ticker = yf.Ticker(stock_ticker)
         info = ticker.info
         
-        # Helper function to force ANY garbage data into a float number
         def safe_float(val, default=0.0):
             if val is None: 
                 return default
@@ -174,7 +172,6 @@ def fetch_real_market_data(stock_ticker):
             "icr": icr
         }
     except Exception as e:
-        # Pura crash hone ki jagah 0 point pass kar dega
         return {
             "market_cap": 0.0, "change_6m_pct": 0.0, "change_today_pct": 0.0, "volume_today": 0.0,
             "promoter_holding": 0.0, "fii_dii_holding": 0.0, "pe_ratio": 0.0, "ebitda_margin": 0.0,
@@ -240,3 +237,43 @@ if col_a.button("🚀 GJ-02 SCAN"):
         st.info(f"Total {len(WATCHLIST_STOCKS)} stocks scan ho rahe hain. Isme 5-10 minute lag sakte hain, kripya wait karein...")
         progress_bar = st.progress(0)
         status_text = st.empty()
+        
+        final_data_rows = []
+        sr_count = 1
+        total_stocks = len(WATCHLIST_STOCKS)
+        
+        for index, stock in enumerate(WATCHLIST_STOCKS):
+            progress = (index + 1) / total_stocks
+            progress_bar.progress(progress)
+            status_text.text(f"Scanning {stock} ({index+1}/{total_stocks})...")
+            
+            api_data = fetch_real_market_data(stock)
+            
+            if api_data is not None:
+                if 500 <= api_data['market_cap'] <= 5000:
+                    if check_p1_to_p5(api_data):
+                        score = calculate_score(api_data)
+                        rows = generate_table_rows(sr_count, stock, api_data, score)
+                        final_data_rows.extend(rows)
+                        sr_count += 1
+            
+            # 🛑 SPEED BREAKER: Har stock scan hone ke baad 1 second ka pause (Yahoo ko block karne se rokne ke liye)
+            time.sleep(1)
+                        
+        status_text.text("Scan Completed!")
+        
+        if len(final_data_rows) > 0:
+            st.success(f"💥 Scan Complete! {sr_count-1} Multibagger Stock(s) found matching exact criteria.")
+            df_results = pd.DataFrame(final_data_rows)
+            styled_df = df_results.style.map(apply_light_color)
+            st.dataframe(styled_df, use_container_width=True, height=600, hide_index=True)
+            
+            csv = df_results.to_csv(index=False).encode('utf-8')
+            col_b.download_button(
+                label="📥 Download Excel",
+                data=csv,
+                file_name="GJ02_Master_Blaster_Report.csv",
+                mime="text/csv",
+            )
+        else:
+            st.warning("⚠️ Koi stock aapke master STRATEGY criteria ko aaj pass nahi kar paya. Market check karte rahein!")
