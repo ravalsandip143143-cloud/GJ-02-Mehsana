@@ -99,7 +99,6 @@ for col, (name, symbol) in zip(idx_cols, indices.items()):
     col.metric(label=name, value=f"{curr:.2f}", delta=f"{chg:.2f} ({pct:.2f}%)")
 
 st.markdown("---")
-
 # ==========================================
 # 📊 REAL DATA FETCHING ENGINE (100% BULLETPROOF)
 # ==========================================
@@ -177,8 +176,7 @@ def fetch_real_market_data(stock_ticker):
             "promoter_holding": 0.0, "fii_dii_holding": 0.0, "pe_ratio": 0.0, "ebitda_margin": 0.0,
             "debt_to_equity": 0.0, "debt_cr": 0.0, "roe": 0.0, "roce": 0.0, "profit_growth": 0.0, "icr": 0.0
         }
-
-# ==========================================
+        # ==========================================
 # 🎯 MASTER BLASTER SCORING & FILTER LOGIC
 # ==========================================
 def calculate_score(data):
@@ -234,7 +232,7 @@ if col_a.button("🚀 GJ-02 SCAN"):
     if not WATCHLIST_STOCKS:
         st.error("Watchlist me koi stock nahi hai ya file read nahi ho payi.")
     else:
-        st.info(f"Total {len(WATCHLIST_STOCKS)} stocks scan ho rahe hain. Isme 5-10 minute lag sakte hain, kripya wait karein...")
+        st.info(f"Total {len(WATCHLIST_STOCKS)} stocks scan ho rahe hain. Har stock me 1 second ka pause hoga taaki Yahoo block na kare. Kripya wait karein...")
         progress_bar = st.progress(0)
         status_text = st.empty()
         
@@ -257,7 +255,7 @@ if col_a.button("🚀 GJ-02 SCAN"):
                         final_data_rows.extend(rows)
                         sr_count += 1
             
-            # 🛑 SPEED BREAKER: Har stock scan hone ke baad 1 second ka pause (Yahoo ko block karne se rokne ke liye)
+            # 🛑 SPEED BREAKER: Yahoo ko block karne se rokne ke liye
             time.sleep(1)
                         
         status_text.text("Scan Completed!")
